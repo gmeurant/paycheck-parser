@@ -1,0 +1,39 @@
+group 'fr.afjt'
+version '1.0-SNAPSHOT'
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '3.0'
+  distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
+
+apply plugin: 'groovy'
+apply plugin: 'application'
+
+mainClassName = 'paycheck-parser'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.11'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+
+    compile 'com.lowagie:itext:4.2.2'
+}
+
+
+run {
+    // Take property appArgs as application arguments during run
+    // It should be coupled with a run.sh script that parse the command line and form the correct Gradle command line, as following
+//    #!/bin/bash
+//    # Join arguments in a string. But not quite like you'd expect... see next line.
+//    printf -v var "'%s', " "$@"
+//    # Remove trailing ", "
+//    var=${var%??}
+//    ./gradlew run -q -PappArgs="[$var]"
+
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
+}
