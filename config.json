@@ -1,6 +1,6 @@
 {
   "scan" : false,
-  "quiet" : false,
+  "quiet" : true,
   "verticalOffset" : 0,
   "convertTime" : true,
   "data":[
