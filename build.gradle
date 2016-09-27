@@ -6,8 +6,10 @@ task wrapper(type: Wrapper) {
   distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
 }
 
+apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'application'
+apply plugin: 'distribution'
 
 mainClassName = 'fr.afjt.tools.PaycheckParser'
 
@@ -23,10 +25,7 @@ dependencies {
     compile 'commons-cli:commons-cli:1.2'
     compile 'org.bouncycastle:bcprov-jdk15on:1.49'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.49'
-
-
 }
-
 
 run {
     // Take property appArgs as application arguments during run

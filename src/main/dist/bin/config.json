@@ -1,0 +1,41 @@
+{
+  "scan" : false,
+  "quiet" : true,
+  "verticalOffset" : 0,
+  "convertTime" : true,
+  "data":[
+    {
+      "name" : "workingHours",
+      "type" : "time",
+      "location" : {
+        "page" : 1,
+        "x" : 132.37,
+        "y" : 437.37,
+        "width" : 50,
+        "height" : 15
+      }
+    },
+    {
+      "name" : "rawSalary",
+      "type" : "number",
+      "location" : {
+        "page" : 1,
+        "x" : 359.9,
+        "y" : 624.26,
+        "width" : 50,
+        "height" : 15
+      }
+    },
+    {
+      "name" : "urssafSalaryPart",
+      "type" : "number",
+      "location" : {
+        "page" : 1,
+        "x" : 450,
+        "y" : 495,
+        "width" : 30,
+        "height" : 15
+      }
+    }
+  ]
+}
