@@ -15,11 +15,21 @@ class PaycheckParser {
         def jsonConfig = new JsonSlurper().parseText(configFile.text)
 
         // Parse the command line arguments
-        def cli = new CliBuilder(usage: 'run.sh <pdf files or folders>')
-        cli.verticalOffset(args: 1, argName: 'offset', 'adjust vertical coordinates for grabbing text')
-        cli.q('quiet mode: print only the short file name and the fields value separated by tabs')
-        cli.convertTime('convert <hour>h<minute>min time to fractional hours')
+        def cli = new CliBuilder(
+                usage: 'run.sh [options] [pdf files or folders]',
+                header: '\nAvailable options (use -h for help):\n')
+        cli.with {
+            h(longOpt:'help', 'print this message')
+            verticalOffset(args: 1, argName: 'offset', 'adjust vertical coordinates for grabbing text')
+            q('quiet mode, print only the short file name and the fields value separated by tabs')
+            convertTime('convert <hour>h<minute>min time to fractional hours')
+        }
         def options = cli.parse(args)
+
+        if (options.h){
+            cli.usage()
+            return
+        }
 
         // Override quiet mode from command line
         if (options.q) {
@@ -58,7 +68,7 @@ class PaycheckParser {
                 }
             }
         } else {
-            println cli.usage
+            cli.usage()
         }
     }
 
