@@ -19,14 +19,16 @@ class PaycheckParser {
                 usage: 'run.sh [options] [pdf files or folders]',
                 header: '\nAvailable options (use -h for help):\n')
         cli.with {
-            h(longOpt:'help', 'print this message')
-            verticalOffset(args: 1, argName: 'offset', 'adjust vertical coordinates for grabbing text')
+            h(longOpt: 'help', 'print this message')
+            vo(longOpt: "verticalOffset", args: 1, argName: 'offset', 'positive offset for vertical coordinates')
+            nvo(longOpt: "negativeVerticalOffset", args: 1, argName: 'offset', 'negative offset for vertical coordinates')
             q('quiet mode, print only the short file name and the fields value separated by tabs')
             convertTime('convert <hour>h<minute>min time to fractional hours')
+            H(longOpt: 'hightlight', 'Hightlight the configured zones in a copy of the pdf files')
         }
         def options = cli.parse(args)
 
-        if (options.h){
+        if (options.h) {
             cli.usage()
             return
         }
@@ -37,13 +39,22 @@ class PaycheckParser {
         }
 
         // Override verticalOffset from command line
-        if (options.verticalOffset) {
-            jsonConfig.verticalOffset = options.verticalOffset
+        // Because CliBuilder returns "15" when parsing a negative value "-15",
+        // and no other work-around could be found, we have to use 2 parameters
+        if (options.vo) {
+            jsonConfig.verticalOffset = options.vo
+        }else if (options.nvo){
+            jsonConfig.verticalOffset = "-"+options.nvo
         }
 
         // Override convertTime from command line
         if (options.convertTime) {
             jsonConfig.convertTime = options.convertTime
+        }
+
+        // Override hightlight mode from command line
+        if (options.H) {
+            jsonConfig.highlight = new Boolean(options.H)
         }
 
         // Each argument represent either a file name or a folder name
@@ -74,15 +85,24 @@ class PaycheckParser {
 
     def parse(String filename, jsonConfig) {
         PdfReader reader = new PdfReader(filename);
+        PdfStamper pdfStamper = new PdfStamper(reader,
+                new FileOutputStream(filename - ".pdf" + "highlighted.pdf"));
 
         jsonConfig.data.each {
-
-            Rectangle rect = new Rectangle(it.location.x, it.location.y + jsonConfig.verticalOffset.toFloat(), it.location.width, it.location.height)
-
+            float y = it.location.y + (it.fixedPosition ? 0 : jsonConfig.verticalOffset.toFloat())
+            Rectangle rect = new Rectangle(it.location.x, it.location.y + (it.fixedPosition ? 0 : jsonConfig.verticalOffset.toFloat()), it.location.width, it.location.height)
             RenderFilter[] filter = new RegionTextRenderFilter(rect);
             TextExtractionStrategy strategy = new FilteredTextRenderListener(new LocationTextExtractionStrategy(), filter);
             String value = PdfTextExtractor.getTextFromPage(reader, it.location.page, strategy)
 
+            if (jsonConfig.highlight) {
+                PdfContentByte cb = pdfStamper.getUnderContent(it.location.page);
+                cb.setCMYKColorStroke(255, 255, 0, 0)
+                cb.setCMYKColorFill(0, 0, 255, 0)
+                cb.setLineWidth(2f);
+                cb.rectangle(it.location.x.toFloat(), it.location.y.toFloat() + (it.fixedPosition ? 0 : jsonConfig.verticalOffset.toFloat()), it.location.width.toFloat(), it.location.height.toFloat())
+                cb.fill()
+            }
             // convert timestamp from format <hour>h<minute>min to fractional hours
             if (it.type == "time" && jsonConfig.convertTime) {
                 // do the conversion
@@ -105,7 +125,9 @@ class PaycheckParser {
             }
 
         }
-        println ''
+        if (jsonConfig.highlight) {
+            pdfStamper.close()
+        }
         if (jsonConfig.scan) {
             for (int y = 0; y < 600; y += 15) {
                 for (int x = 0; x < 800; x += 50) {
@@ -118,55 +140,6 @@ class PaycheckParser {
                     }
                 }
             }
-        }
-        /*
-             for (int page = 1; page <= 2; page++) {
-                 PdfDictionary pd = reader.getPageN(page);
-                 Iterator keys = pd.getKeys().iterator();
-                 while (keys.hasNext())
-                     println 'Debug :'+keys.next()
-
-                 PdfObject object = pd.getDirectObject(PdfName.CONTENTS)
-                 println object.class.name
-
-                 if (object instanceof PRStream){
-                     PRStream stream = (PRStream) object
-                     byte[] b;
-                     try {
-                         b = PdfReader.getStreamBytes(stream);
-                     }
-                     catch(UnsupportedPdfException e) {
-                         b = PdfReader.getStreamBytesRaw(stream);
-                     }
-
-                 }
-
-                 println "Page ${page} contents below:"
-                 println object.toString()
-
-                 keys = object.getKeys().iterator()
-                 while (keys.hasNext())
-                     println '  '+keys.next()
-
-                 println PdfTextExtractor.getTextFromPage(reader, page);
-             }
-             */
-    }
-
-
-    def test(String filename) {
-        PdfReader reader = new PdfReader(filename);
-        PdfDictionary pd = reader.getPageN(3);
-        Iterator keys = pd.getKeys().iterator();
-        while (keys.hasNext())
-            System.out.println(keys.next());
-        PdfObject object = pd.get(PdfName.CONTENTS);
-        System.out.println(object.getClass().getName());
-        if (object instanceof PRIndirectReference) {
-            PRIndirectReference array = (PRIndirectReference) object;
-            PdfReader rrr = array.getReader();
-            rrr.getNumberOfPages();
-            System.out.println("stop");
         }
     }
 }
